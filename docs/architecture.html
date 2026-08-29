@@ -1,0 +1,297 @@
+<title>窓口コンシェルジュ アーキテクチャ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg:#EEF1EF;
+    --surface:#FFFFFF;
+    --surface-2:#E4E9E6;
+    --ink:#1B2521;
+    --ink-muted:#5C6B66;
+    --line:#C7D0CB;
+    --accent:#1F3B57;
+    --accent-tint:#E4EAF0;
+    --accent-2:#93392A;
+    --accent-2-tint:#F1E1DC;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12171A;
+      --surface:#1C2427;
+      --surface-2:#222B2E;
+      --ink:#E8EDEB;
+      --ink-muted:#94A39D;
+      --line:#3A4448;
+      --accent:#7DA3C8;
+      --accent-tint:#1E2B39;
+      --accent-2:#D68F7E;
+      --accent-2-tint:#33231F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12171A;
+    --surface:#1C2427;
+    --surface-2:#222B2E;
+    --ink:#E8EDEB;
+    --ink-muted:#94A39D;
+    --line:#3A4448;
+    --accent:#7DA3C8;
+    --accent-tint:#1E2B39;
+    --accent-2:#D68F7E;
+    --accent-2-tint:#33231F;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
+  }
+  .page{
+    max-width:980px;
+    margin:0 auto;
+    padding:56px 28px 72px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 14px;
+  }
+  h1{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:clamp(28px,4vw,38px);
+    line-height:1.35;
+    margin:0 0 18px;
+    text-wrap:balance;
+    color:var(--ink);
+  }
+  .lede{
+    font-size:15px;
+    line-height:1.85;
+    color:var(--ink-muted);
+    max-width:62ch;
+    margin:0 0 40px;
+  }
+  .lede strong{ color:var(--ink); font-weight:500; }
+
+  figure{
+    margin:0 0 8px;
+    padding:20px 20px 12px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+  }
+  figure svg{
+    display:block;
+    width:100%;
+    height:auto;
+    overflow-x:auto;
+  }
+  figcaption{
+    font-size:13px;
+    line-height:1.7;
+    color:var(--ink-muted);
+    padding:16px 6px 6px;
+    border-top:1px solid var(--line);
+    margin-top:12px;
+  }
+  figcaption strong{ color:var(--ink); font-weight:700; }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    margin:28px 0 40px;
+    padding:14px 18px;
+    background:var(--surface-2);
+    border-radius:10px;
+    font-size:12.5px;
+    color:var(--ink-muted);
+  }
+  .legend-item{ display:flex; align-items:center; gap:9px; }
+  .legend-swatch{ width:28px; height:0; border-top:2px solid var(--ink-muted); }
+  .legend-swatch.dashed{ border-top-style:dashed; }
+  .legend-swatch.esc{ border-top-color:var(--accent-2); }
+
+  .foot-note{
+    font-size:12.5px;
+    line-height:1.8;
+    color:var(--ink-muted);
+  }
+  .foot-note a{ color:var(--accent); }
+</style>
+
+<div class="page">
+  <p class="eyebrow">Multi-Agent Architecture — Bank Counter Concierge</p>
+  <h1>窓口コンシェルジュのマルチエージェント構成</h1>
+  <p class="lede">
+    フロントエージェントが顧客との唯一の対話窓口を務め、商品領域ごとの専門エージェントを
+    <strong>Agent-as-Tool</strong>（呼べば返る関数として扱う方式）で呼び出す。
+    専門エージェントの回答は検証エージェントが商品マスタと機械照合し、
+    <strong>規制対象商品の最終判断・高リスク意図・数値不一致</strong>だけが
+    人間の説明責任境界へ渡る、という境界線を可視化した図。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 1220 620" role="img" aria-label="フロントエージェントが専門エージェント3種をAgent-as-Toolで呼び出し、検証エージェントが商品マスタと照合したうえで顧客に回答する。高リスク意図・適合性ガードレール・検証不一致の3経路のみが人間エスカレーションへ渡る構成図">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-muted)"/>
+        </marker>
+        <marker id="arrow-esc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--accent-2)"/>
+        </marker>
+      </defs>
+
+      <!-- boundary bands -->
+      <rect x="15" y="95" width="980" height="450" rx="18" fill="var(--accent-tint)"/>
+      <text x="35" y="118" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="1.5" fill="var(--accent)">AI 実行境界</text>
+
+      <rect x="995" y="100" width="200" height="490" rx="18" fill="var(--accent-2-tint)"/>
+
+      <!-- 顧客 -->
+      <rect x="520" y="20" width="180" height="60" rx="10" fill="var(--surface)" stroke="var(--ink-muted)" stroke-width="1.5"/>
+      <text x="610" y="55" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">顧客</text>
+
+      <!-- question / answer arrows -->
+      <line x1="590" y1="80" x2="590" y2="108" stroke="var(--ink-muted)" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="578" y="98" text-anchor="end" font-size="10.5" fill="var(--ink-muted)">質問</text>
+      <line x1="630" y1="108" x2="630" y2="80" stroke="var(--ink-muted)" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="642" y="98" font-size="10.5" fill="var(--ink-muted)">回答(出典付き)</text>
+
+      <!-- フロントエージェント -->
+      <rect x="430" y="110" width="360" height="70" rx="10" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="610" y="140" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">フロントエージェント</text>
+      <text x="610" y="158" text-anchor="middle" font-size="11" fill="var(--ink-muted)">唯一の対話窓口 · Agent-as-Tool</text>
+
+      <!-- return path from verify (drawn behind other lines for clarity) -->
+      <polyline points="490,445 220,445 220,145 428,145" fill="none" stroke="var(--ink-muted)" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="212" y="300" text-anchor="end" font-size="10.5" fill="var(--ink-muted)" transform="rotate(-90 212 300)">検証結果 ( ok / corrected )</text>
+
+      <!-- front -> diamond -->
+      <line x1="610" y1="180" x2="610" y2="203" stroke="var(--ink-muted)" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <!-- decision diamond -->
+      <polygon points="610,200 700,240 610,280 520,240" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="610" y="236" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">高リスク</text>
+      <text x="610" y="251" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">意図?</text>
+
+      <!-- diamond -> human lane (Yes) -->
+      <line x1="700" y1="240" x2="998" y2="240" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrow-esc)"/>
+      <text x="850" y="223" text-anchor="middle" font-size="10.5" fill="var(--accent-2)">Yes：決定的ルーティング</text>
+      <text x="850" y="236" text-anchor="middle" font-size="9.5" fill="var(--ink-muted)">(相続 / 解約 / 苦情)</text>
+
+      <!-- diamond -> dispatch bus -->
+      <line x1="610" y1="280" x2="610" y2="300" stroke="var(--ink-muted)" stroke-width="2"/>
+      <text x="622" y="296" font-size="10.5" fill="var(--ink-muted)">No：商品照会</text>
+      <polyline points="350,300 610,300 870,300" fill="none" stroke="var(--ink-muted)" stroke-width="2"/>
+      <line x1="350" y1="300" x2="350" y2="308" stroke="var(--ink-muted)" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="610" y1="300" x2="610" y2="308" stroke="var(--ink-muted)" stroke-width="2" marker-end="url(#arrow)"/>
+      <line x1="870" y1="300" x2="870" y2="308" stroke="var(--ink-muted)" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="700" y="294" text-anchor="middle" font-size="10" fill="var(--ink-muted)">tool call: consult_xxx(question)</text>
+
+      <!-- 専門エージェント x3 -->
+      <g>
+        <rect x="240" y="310" width="220" height="100" rx="10" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="350" y="336" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">基本手続き</text>
+        <text x="350" y="352" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">エージェント</text>
+        <text x="350" y="368" text-anchor="middle" font-size="10.5" fill="var(--ink-muted)">普通預金・振込等</text>
+        <text x="350" y="386" text-anchor="middle" font-size="9.5" fill="var(--ink-muted)" font-style="italic">Scout → Act</text>
+        <text x="350" y="401" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="var(--accent)">consult_basic_banking</text>
+      </g>
+
+      <g>
+        <rect x="500" y="310" width="220" height="100" rx="10" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="610" y="336" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">住宅ローン</text>
+        <text x="610" y="352" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">エージェント</text>
+        <text x="610" y="368" text-anchor="middle" font-size="10.5" fill="var(--ink-muted)">各種ローン</text>
+        <text x="610" y="386" text-anchor="middle" font-size="9.5" fill="var(--ink-muted)" font-style="italic">Scout → Act</text>
+        <text x="610" y="401" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="var(--accent)">consult_housing_loan</text>
+      </g>
+
+      <g>
+        <rect x="760" y="310" width="220" height="100" rx="10" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="870" y="332" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">NISA・投資信託</text>
+        <text x="870" y="348" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">エージェント</text>
+        <rect x="822" y="356" width="96" height="16" rx="8" fill="var(--accent-2-tint)"/>
+        <text x="870" y="368" text-anchor="middle" font-size="9" fill="var(--accent-2)">適合性原則の対象</text>
+        <text x="870" y="386" text-anchor="middle" font-size="9.5" fill="var(--ink-muted)" font-style="italic">Scout → Act</text>
+        <text x="870" y="401" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="var(--accent)">consult_nisa_toshin</text>
+      </g>
+
+      <!-- specialist -> knowledge (representative, dashed) -->
+      <line x1="240" y1="345" x2="212" y2="352" stroke="var(--ink-muted)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+      <text x="120" y="322" text-anchor="middle" font-size="9.5" fill="var(--ink-muted)">Scout：マニュアル検索</text>
+      <text x="120" y="333" text-anchor="middle" font-size="8.5" fill="var(--ink-muted)">(全専門エージェント共通)</text>
+
+      <!-- マニュアルコーパス -->
+      <rect x="30" y="330" width="180" height="60" rx="8" fill="var(--surface-2)" stroke="var(--ink-muted)" stroke-width="1.3" stroke-dasharray="5 3"/>
+      <text x="120" y="356" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--ink)">マニュアルコーパス</text>
+      <text x="120" y="373" text-anchor="middle" font-size="9.5" fill="var(--ink-muted)">商品マニュアル(版管理)</text>
+
+      <!-- 適合性ガードレール: S3 -> human lane -->
+      <line x1="980" y1="360" x2="998" y2="360" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrow-esc)"/>
+      <text x="988" y="352" font-size="9" fill="var(--accent-2)" text-anchor="end">適合性ガードレール</text>
+
+      <!-- specialists -> verify fan-in -->
+      <line x1="350" y1="410" x2="350" y2="422" stroke="var(--ink-muted)" stroke-width="2"/>
+      <line x1="610" y1="410" x2="610" y2="422" stroke="var(--ink-muted)" stroke-width="2"/>
+      <line x1="870" y1="410" x2="870" y2="422" stroke="var(--ink-muted)" stroke-width="2"/>
+      <polyline points="350,422 870,422" fill="none" stroke="var(--ink-muted)" stroke-width="2"/>
+      <line x1="610" y1="422" x2="610" y2="438" stroke="var(--ink-muted)" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="622" y="418" font-size="10" fill="var(--ink-muted)">SpecialistResponse(answer, citations)</text>
+
+      <!-- 検証エージェント -->
+      <rect x="490" y="440" width="240" height="70" rx="10" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="610" y="468" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">検証エージェント</text>
+      <text x="610" y="484" text-anchor="middle" font-size="10.5" fill="var(--ink-muted)">数値・出典を機械照合</text>
+      <text x="610" y="500" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="var(--accent)">verify(response)</text>
+
+      <!-- verify -> 商品マスタ -->
+      <line x1="488" y1="480" x2="214" y2="493" stroke="var(--ink-muted)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+      <text x="330" y="502" text-anchor="middle" font-size="9.5" fill="var(--ink-muted)">照合</text>
+
+      <!-- 商品マスタ -->
+      <rect x="30" y="460" width="180" height="60" rx="8" fill="var(--surface-2)" stroke="var(--ink-muted)" stroke-width="1.3" stroke-dasharray="5 3"/>
+      <text x="120" y="486" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--ink)">商品マスタ</text>
+      <text x="120" y="503" text-anchor="middle" font-size="9.5" fill="var(--ink-muted)">金利・手数料(正データ)</text>
+
+      <!-- 検証不一致 -> human lane -->
+      <line x1="730" y1="490" x2="998" y2="490" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrow-esc)"/>
+      <text x="850" y="483" text-anchor="middle" font-size="9.5" fill="var(--accent-2)">検証不一致・未解決</text>
+
+      <!-- 人間エスカレーション lane -->
+      <rect x="1000" y="110" width="190" height="470" rx="14" fill="var(--surface)" stroke="var(--accent-2)" stroke-width="2"/>
+      <text x="1095" y="140" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">人間</text>
+      <text x="1095" y="158" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">エスカレーション</text>
+      <text x="1095" y="178" text-anchor="middle" font-size="10.5" fill="var(--ink-muted)">有資格の行員が対応</text>
+      <line x1="1020" y1="196" x2="1170" y2="196" stroke="var(--line)" stroke-width="1"/>
+      <text x="1095" y="530" text-anchor="middle" font-size="10" fill="var(--ink-muted)">最終説明・推奨</text>
+      <text x="1095" y="546" text-anchor="middle" font-size="10" fill="var(--ink-muted)">契約手続き</text>
+      <text x="1095" y="568" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" letter-spacing="1" fill="var(--accent-2)">説明責任境界</text>
+    </svg>
+
+    <figcaption>
+      商品照会の大半はフロント→専門エージェント→検証エージェント→フロントという<strong>制御が必ず戻るAgent-as-Toolの往復</strong>で完結する。
+      人間エスカレーション（右列）へ渡るのは、<strong>高リスク意図の決定的ルーティング</strong>・
+      <strong>適合性原則が絡む商品での断定判断要求</strong>・<strong>検証エージェントが解消できなかった数値不一致</strong>の3経路のみに限定している。
+    </figcaption>
+  </figure>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch"></span>制御・データの受け渡し（エージェント間）</div>
+    <div class="legend-item"><span class="legend-swatch dashed"></span>参照・検索（エージェント → データ）</div>
+    <div class="legend-item"><span class="legend-swatch esc"></span>説明責任境界への越境（人間エスカレーション）</div>
+  </div>
+
+  <p class="foot-note">
+    設計方針の詳細（Agent-as-Tool採用の理由、エージェント境界の設計基準、メリット・デメリットと対策）は
+    <code>essays/銀行窓口コンシェルジュAIエージェントのマルチエージェント設計と妥当性評価</code>、
+    実装仕様は <code>docs/ARCHITECTURE.md</code> を参照。
+  </p>
+</div>

@@ -1,0 +1,27 @@
+{
+  "version": "v1.0",
+  "updated_at": "2026-08-01",
+  "products": {
+    "housing_loan_fixed_10y": {
+      "name": "住宅ローン（10年固定）",
+      "interest_rate_pct": 1.35,
+      "unit": "年率・変動あり",
+      "arrangement_fee_jpy": 33000
+    },
+    "housing_loan_variable": {
+      "name": "住宅ローン（変動）",
+      "interest_rate_pct": 0.475,
+      "unit": "年率・変動あり",
+      "arrangement_fee_jpy": 33000
+    },
+    "nisa_tsumitate": {
+      "name": "つみたて投資枠（NISA）",
+      "annual_limit_jpy": 1200000,
+      "management_fee_note": "銘柄ごとに異なる。個別回答不可（要有人窓口）"
+    },
+    "furikomi_atm": {
+      "name": "他行宛振込（ATM）",
+      "fee_jpy": 220
+    }
+  }
+}
