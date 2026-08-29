@@ -146,8 +146,10 @@ def main() -> None:
                     st.markdown(user_input)
 
             before_count = len(st.session_state.audit_log.entries)
-            with st.spinner("エージェントが対応中です..."):
-                answer = st.session_state.front_agent.handle_user_message(user_input)
+            with chat_col:
+                with st.chat_message("assistant"):
+                    with st.spinner("🤔 考え中です…（フロント／専門／検証エージェントが連携中）"):
+                        answer = st.session_state.front_agent.handle_user_message(user_input)
             after_entries = st.session_state.audit_log.entries[before_count:]
 
             st.session_state.turns.append({"user_message": user_input, "entries": after_entries})
