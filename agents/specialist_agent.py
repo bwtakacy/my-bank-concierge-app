@@ -14,6 +14,7 @@ Anthropic APIのtool useで構造を強制する）。
 from __future__ import annotations
 
 import os
+import re
 
 from core.anthropic_client import get_client
 from core.schemas import Citation, SpecialistResponse
@@ -77,6 +78,17 @@ def _needs_suitability_handoff(question: str) -> bool:
     return any(kw in question for kw in _SUITABILITY_TRIGGER_KEYWORDS)
 
 
+# ごく稀に、tool_use自体は発行されるものの、モデルが "answer" フィールドの
+# 値の末尾に旧式のテキスト形式ツール呼び出し（`</answer>` `<citations>`
+# `<requires_human_handoff>` `<invoke ...>` 等）を余分に書き足してしまう
+# ことがある（front_agent._HALLUCINATED_TOOL_CALL_RE と同種の現象）。
+# 検出した場合は同じリクエストをリトライする。
+_LEAKED_TAG_RE = re.compile(
+    r"</answer>|<citations|<requires_human_handoff|<invoke\s+name=|</invoke>|<parameter\s+name="
+)
+MAX_MALFORMED_RETRIES = 5
+
+
 def build_specialist_system_prompt(domain: str, requires_qualification: bool) -> str:
     label = DOMAIN_LABELS.get(domain, domain)
     prompt = f"""あなたは{label}専門のAIエージェントです。以下に渡されたマニュアル抜粋のみを
@@ -120,18 +132,33 @@ def _build_user_message(question: str, chunks: list[manual_search.ManualChunk]) 
 def call_claude(system_prompt: str, user_message: str) -> dict:
     client = get_client()
     model = os.environ.get("ANTHROPIC_MODEL_SPECIALIST", "claude-sonnet-5")
-    message = client.messages.create(
-        model=model,
-        max_tokens=1024,
-        system=system_prompt,
-        tools=[_RESPONSE_TOOL],
-        tool_choice={"type": "tool", "name": _RESPONSE_TOOL_NAME},
-        messages=[{"role": "user", "content": user_message}],
-    )
-    for block in message.content:
-        if block.type == "tool_use" and block.name == _RESPONSE_TOOL_NAME:
-            return block.input
-    raise ValueError(f"LLM応答に {_RESPONSE_TOOL_NAME} のtool_useが含まれていません: {message.content!r}")
+    data: dict | None = None
+    for _ in range(1 + MAX_MALFORMED_RETRIES):
+        message = client.messages.create(
+            model=model,
+            max_tokens=1024,
+            system=system_prompt,
+            tools=[_RESPONSE_TOOL],
+            tool_choice={"type": "tool", "name": _RESPONSE_TOOL_NAME},
+            messages=[{"role": "user", "content": user_message}],
+        )
+        data = None
+        for block in message.content:
+            if block.type == "tool_use" and block.name == _RESPONSE_TOOL_NAME:
+                data = block.input
+                break
+        if data is None:
+            continue
+        if not _LEAKED_TAG_RE.search(data.get("answer", "")):
+            return data
+    if data is None:
+        raise ValueError(f"LLM応答に {_RESPONSE_TOOL_NAME} のtool_useが含まれていません: {message.content!r}")
+    # リトライを尽くしても answer に漏れ出た擬似タグが残る場合、それ以降を
+    # 切り捨てて顧客向け表示に壊れた文字列が出ないようにする（縮退運転）。
+    match = _LEAKED_TAG_RE.search(data.get("answer", ""))
+    if match:
+        data = {**data, "answer": data["answer"][: match.start()].rstrip()}
+    return data
 
 
 def parse_into_specialist_response(
