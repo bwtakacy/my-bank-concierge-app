@@ -8,8 +8,6 @@ LLMによる動的ルーティングの「前段」で必ず呼ばれる。正�
 """
 from __future__ import annotations
 
-import re
-
 HIGH_RISK_PATTERNS: dict[str, list[str]] = {
     "相続": ["相続", "遺言", "死亡", "亡くなった"],
     "解約": ["解約したい", "口座を閉じ", "口座を解約"],

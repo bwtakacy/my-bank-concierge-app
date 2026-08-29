@@ -14,7 +14,7 @@ import os
 
 import pytest
 
-from agents import front_agent, specialist_agent
+from agents import specialist_agent
 from agents.front_agent import FrontAgent, consult_specialist
 from core.audit_log import AuditLog
 from core.schemas import Citation, SpecialistResponse

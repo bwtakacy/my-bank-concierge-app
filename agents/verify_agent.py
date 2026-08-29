@@ -9,9 +9,8 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 
-from core.schemas import Citation, SpecialistResponse, VerificationResult
+from core.schemas import SpecialistResponse, VerificationResult
 from tools import master_lookup
 
 # (domain, 必須キーワード群, product_id, field_name, 値の種類)

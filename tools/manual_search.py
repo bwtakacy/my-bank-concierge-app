@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
-from functools import lru_cache
 
 KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / "knowledge" / "products"
 
@@ -84,7 +84,7 @@ def _split_into_chunks(domain: str, source_file: str, source_version: str, body:
     return chunks
 
 
-@lru_cache(maxsize=None)
+@cache
 def _load_domain(domain: str) -> tuple[ManualMetadata, tuple[ManualChunk, ...]]:
     filename = DOMAIN_FILES[domain]
     path = KNOWLEDGE_DIR / filename

@@ -25,11 +25,17 @@
 
 ### 1. 依存関係のインストール
 
+このプロジェクトは [uv](https://docs.astral.sh/uv/) で依存関係・仮想環境を管理しています。
+[uvのインストール手順](https://docs.astral.sh/uv/getting-started/installation/)に従って
+uvを導入した後、以下を実行してください。
+
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate  # Windowsの場合: .venv\Scripts\activate
-pip install -r requirements.txt
+uv sync
 ```
+
+`.venv` が作成され、依存関係（`pyproject.toml` / `uv.lock`）がインストールされます。
+以降のコマンドは `uv run <コマンド>` で実行するか、`source .venv/bin/activate` で
+仮想環境を有効化してから実行してください。
 
 ### 2. 環境変数の設定
 
@@ -50,7 +56,7 @@ ANTHROPIC_MODEL_SPECIALIST=claude-sonnet-5
 ### 3. アプリの起動
 
 ```bash
-streamlit run app.py
+uv run streamlit run app.py
 ```
 
 ブラウザで `http://localhost:8501` が開き、チャットUIとエージェント
@@ -72,7 +78,13 @@ streamlit run app.py
 ## テストの実行
 
 ```bash
-pytest
+uv run pytest
+```
+
+## Lintの実行
+
+```bash
+uv run ruff check .
 ```
 
 ルーティング・検証ロジックのユニットテストに加え、`tests/test_scenarios.py`

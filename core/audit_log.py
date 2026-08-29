@@ -12,7 +12,7 @@ AuditLog をそのまま表示に使う。マルチエージェントが実際�
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from core.schemas import AuditLogEntry
@@ -36,7 +36,7 @@ class AuditLog:
         manual_version: str | None = None,
     ) -> AuditLogEntry:
         entry = AuditLogEntry(
-            timestamp=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            timestamp=datetime.now(UTC).isoformat(timespec="seconds"),
             agent_id=agent_id,
             model_id=model_id,
             manual_version=manual_version,
